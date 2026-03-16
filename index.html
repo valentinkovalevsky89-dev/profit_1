@@ -492,7 +492,7 @@ function save() {
 }
 function load() {
   try {
-    var ex = localStorage.getItem('exState_v9');
+    var ex = localStorage.getItem('exState_v9') || localStorage.getItem('exState_v8');
     var sh = localStorage.getItem('shState_v8');
     if (ex) { var parsed = JSON.parse(ex); if (parsed && parsed.deals) exState = parsed; }
     if (sh) { var parsedS = JSON.parse(sh); if (parsedS) shState = parsedS; }
@@ -500,6 +500,14 @@ function load() {
     if (!exState.closedRounds) exState.closedRounds = [];
     if (!exState.rounds2)      exState.rounds2      = [];
     if (exState.openRound2 === undefined) exState.openRound2 = null;
+    if (!exState.agentProfit)  exState.agentProfit  = {};
+
+    // Migrate deals that have no agent field → assign to 'owner'
+    (exState.deals || []).forEach(function(d) {
+      if (!d.agent) d.agent = 'owner';
+      // migrate old 'a1'/'a2' agent ids if agentCfg doesn't have them
+      // (will be resolved after agentCfg loads; safe to leave as-is)
+    });
     if (!exState.capital)      exState.capital      = {eur:3000,huf:2000000,usdt:3000,usd:0,czk:0};
     if (!exState.deals)        exState.deals        = [];
     if (!exState.cashflows)    exState.cashflows    = [];
@@ -799,11 +807,11 @@ function renderExLog() {
 }
 
 function renderExchange() {
-  renderExAssets();
-  renderExAgents();
-  renderExCharts();
-  renderExLog();
-  if(document.getElementById("cf-log")) renderCfLog();
+  try { renderExAssets(); } catch(e){ console.error('renderExAssets:', e); }
+  try { renderExAgents(); } catch(e){ console.error('renderExAgents:', e); }
+  try { renderExCharts(); } catch(e){ console.error('renderExCharts:', e); }
+  try { renderExLog();    } catch(e){ console.error('renderExLog:', e); }
+  try { if(document.getElementById("cf-log")) renderCfLog(); } catch(e){ console.error('renderCfLog:', e); }
 }
 
 // ================================================================
